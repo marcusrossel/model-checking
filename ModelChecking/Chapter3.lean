@@ -45,7 +45,10 @@ theorem reach_of_ts_eq_post₂_I : t.reach = g.post₂ t.I := by
     have hs := Set.mem_set_of_eq.mp hs
     apply Set.mem_set_of_eq.mpr
     cases hs
-    case rfl => sorry
+    case rfl =>
+      exists TransSys.ExecFragment.singleton t s
+      exists TransSys.ExecFragment.singleton_finite t s
+      exact ⟨hv, TransSys.ExecFragment.singleton_last t s⟩
     case edge => sorry 
     case trans => sorry
 

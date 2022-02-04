@@ -67,10 +67,23 @@ structure ExecFragment where
 
 namespace ExecFragment
 
+-- An execution fragment consisting of only one state.
+def singleton (s : t.S) : ExecFragment t := {
+  sₒ := s,
+  tail := λ _ => none,
+  tailSeq := λ _ _ => rfl, 
+  wfHeadTrans := λ _ _ _ h => by simp at h,
+  wfTailTrans := λ _ _ _ _ _ h => by simp at h
+}
+
 variable {t}
 
 -- Definition 2.6
 def finite (f : ExecFragment t) : Prop := ∃ i, f.tail i = none
+
+theorem singleton_finite (t) (s : t.S) : (singleton t s).finite := by
+  simp only [singleton, finite]
+  exact ⟨0, True.intro⟩
 
 -- Definition 2.6
 def infinite (f : ExecFragment t) : Prop := ∀ i, f.tail i ≠ none
@@ -78,20 +91,44 @@ def infinite (f : ExecFragment t) : Prop := ∀ i, f.tail i ≠ none
 theorem finite_or_infinite (f : ExecFragment t) : f.finite ∨ f.infinite := by
   sorry
 
+theorem finite_has_end (f : ExecFragment t) (h : f.finite) : 
+  ∃ i, f.tail i = none ∧ ∀ j, j < i → f.tail j ≠ none :=
+  sorry
+
 -- Definition 2.6
-noncomputable def length (f : ExecFragment t) (h : f.finite) : Nat := 
-  let description := ∃ i, f.tail i = none ∧ ∀ j, j < i → f.tail j ≠ none
-  let existence : description := sorry
-  existence.choose
+noncomputable def length (f : ExecFragment t) (h : f.finite) : Nat := (finite_has_end f h).choose
+
+theorem pred_of_positive_length_ne_none (f : ExecFragment t) (hf : f.finite) (hl : 0 < f.length hf) : 
+  f.tail (f.length hf - 1) ≠ none := by
+    simp only [length] at *
+    have hc := (finite_has_end f hf).choose_spec.right (finite_has_end f hf).choose -- hl
+    sorry
+    /-let x := (Option.ne_none_iff_exists (o := f.tail n)).mp (by
+      simp only [length] at hm
+      have hc := Exists.choose_spec (finite_has_end f h)
+      rw [hm] at hc
+      exact hc.right n (Nat.lt_succ_self n)
+    )-/
+
+-- TODO: Remove this.
+lemma Nat.zero_lt_succ (n : Nat) : 0 < Nat.succ n := sorry
 
 -- Gets the last state in a finite execution.
 noncomputable def last (f : ExecFragment t) (h : f.finite) : t.S := 
-  match f.length h with
+  match hm:f.length h with
   | 0 => f.sₒ
   | n + 1 => 
-    let l := f.tail n
-    -- Show that l is not none.
-    sorry
+    have hl : 0 < length f h := by simp [hm, Nat.zero_lt_succ]
+    (Option.ne_none_iff_exists.mp $ pred_of_positive_length_ne_none f h hl).choose.snd
+
+theorem singleton_last (t) (s : t.S) : (singleton t s).last (singleton_finite t s) = s := by
+  simp only [last]
+  sorry
+  /-
+  cases (singleton t s).length (singleton_finite t s)
+  case zero => simp [singleton]
+  case succ => sorry
+  -/
 
 -- Definition 2.7
 inductive maximal (f : ExecFragment t) : Prop
